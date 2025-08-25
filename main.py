@@ -4,48 +4,109 @@ from PIL import Image, ImageDraw
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import os
+from tensorflow.keras.preprocessing import image
 
-# ====== تنظیمات اولیه ======
-IMG_SIZE = 224
-ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
-iranian_labels = ['Baluch', 'Gilak', 'Hormozgani', 'Kurd', 'Lur', 'South_Khorasan', 'Yazdi']
+# ============ پیش‌پردازش ============
+def preprocess_image(img_path, IMG_SIZE=224):
+    img = Image.open(img_path).convert("RGB")
+    img = img.resize((IMG_SIZE, IMG_SIZE))
 
-# بارگذاری مدل‌ها
-@st.cache_resource
-def load_models():
-    model = load_model("ethnicity_model.keras")
-    model_irani = load_model("ethnicity_model_irani.keras")
-    return model, model_irani
+    # 🔹 همان چیزی که گفتی:
+    img = img.convert('L')   # grayscale
+    img_array = image.img_to_array(img)  # (224,224,1)
+    img_array = np.repeat(img_array, 3, axis=-1)  # (224,224,3)
+    img_array = np.expand_dims(img_array, axis=0) # (1,224,224,3)
+    img_array /= 255.0
 
-model, model_irani = load_models()
+    return img_array
 
-# ====== رابط کاربری ======
-st.title("Ethnicity Recognition from Image")
-uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+# ============ آماده‌سازی متن خروجی ============
+def format_ethnicity_output(preds: dict, iranian_subpreds: dict):
+    preds = {k: v * 100 for k, v in preds.items()}
+    iranian_subpreds = {k: v * 100 for k, v in iranian_subpreds.items()}
+    total_iranian = preds.get('Iranian', 0)
+    sum_subs = sum(iranian_subpreds.values())
 
-if uploaded_file:
-    img = Image.open(uploaded_file).convert("RGB")
-    st.image(img, caption="Uploaded Image", use_column_width=True)
-    
-    # پیش‌پردازش تصویر
-    img_resized = img.resize((IMG_SIZE, IMG_SIZE))
-    img_gray = img_resized.convert("L")
-    arr = np.array(img_gray)
-    arr = np.stack([arr]*3, axis=-1)
-    arr = np.expand_dims(arr, axis=0) / 255.0
+    if sum_subs > 0:
+        normalized_subs = {k: round(v * total_iranian / sum_subs, 2) for k, v in iranian_subpreds.items()}
+    else:
+        normalized_subs = {k: 0.0 for k in iranian_subpreds}
 
-    # پیش‌بینی
-    preds = model.predict(arr)[0]
-    preds_irani = model_irani.predict(arr)[0]
+    iranian_str = f"Iranian: {total_iranian:.2f}% (" + ', '.join([f"{k}: {v:.2f}%" for k, v in normalized_subs.items()]) + ")"
+    other_groups = [k for k in preds if k != 'Iranian']
+    others_str = '\n'.join([f"{k}: {preds[k]:.2f}%" for k in other_groups])
 
-    # نمایش متن درصد قومیتی
-    st.subheader("Predicted Ethnicity Percentages")
-    result = dict(zip(ethnic_labels, preds.tolist()))
-    result_irani = dict(zip(iranian_labels, preds_irani.tolist()))
+    return iranian_str + '\n' + others_str
 
-    # نمایش Pie chart
-    fig, ax = plt.subplots(figsize=(6,6))
-    sizes = [v*100 for v in result.values()]
-    ax.pie(sizes, labels=result.keys(), autopct="%1.1f%%", startangle=140)
-    ax.axis("equal")
-    st.pyplot(fig)
+# ============ آماده‌سازی عکس‌های اقوام ============
+def prepare_ethnic_images():
+    ethnic_groups = ["Arab", "Iranian", "IranianJews", "Pashtun", "Turkic"]
+    prepared_images = {}
+    size = (120, 120)
+
+    for group in ethnic_groups:
+        img_file = f"{group}.jpg"
+        if os.path.exists(img_file):
+            img = Image.open(img_file).convert("RGB")
+            img_resized = img.resize(size, Image.Resampling.LANCZOS)
+
+            # دایره‌ای کردن
+            mask = Image.new('L', size, 0)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0) + size, fill=255)
+            img_resized.putalpha(mask)
+
+            prepared_images[group] = img_resized
+    return prepared_images
+
+# ============ رسم نمودار پای ============
+def plot_ethnicity_pie(predictions_dict, prepared_images):
+    labels = list(predictions_dict.keys())
+    sizes = [predictions_dict[k] * 100 for k in labels]
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    wedgeprops = {'width': 0.4}
+    wedges, texts = ax.pie(sizes, startangle=140, wedgeprops=wedgeprops)
+
+    for i, wedge in enumerate(wedges):
+        angle = (wedge.theta2 + wedge.theta1) / 2.
+        radius = 1.1
+        x = radius * np.cos(np.deg2rad(angle))
+        y = radius * np.sin(np.deg2rad(angle))
+        percent = sizes[i]
+        label = labels[i]
+
+        if percent > 0:
+            ax.text(x, y, f"{label}: {percent:.1f}%", ha='center', va='center', fontsize=9)
+
+        if label in prepared_images and percent > 0:
+            imagebox = OffsetImage(prepared_images[label], zoom=0.45)
+            inner_radius = 1 - wedgeprops['width']
+            outer_radius = 1
+            img_radius = (inner_radius + outer_radius) / 2.0
+            x_img = img_radius * np.cos(np.deg2rad(angle))
+            y_img = img_radius * np.sin(np.deg2rad(angle))
+            ab = AnnotationBbox(imagebox, (x_img, y_img), frameon=False, pad=0.0)
+            ax.add_artist(ab)
+
+    ax.axis('equal')
+    plt.tight_layout()
+    plt.show()
+
+# ============ نمونه استفاده ============
+"""
+img_array = preprocess_image("test.jpg")
+
+predictions = model.predict(img_array)
+predictions_irani = model_irani.predict(img_array)
+
+predictions_dict = dict(zip(ethnic_labels, predictions[0]))
+predictions_irani_dict = dict(zip(iranian_labels, predictions_irani[0]))
+
+print(format_ethnicity_output(predictions_dict, predictions_irani_dict))
+
+prepared_images = prepare_ethnic_images()
+plot_ethnicity_pie(predictions_dict, prepared_images)
+"""
+
