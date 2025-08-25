@@ -25,7 +25,7 @@ model, model_irani = load_models()
 # ====== بارگذاری عکس‌های اقوام ======
 def load_ethnic_images():
     prepared_images = {}
-    target_size = (70, 70)  # 👈 همه عکس‌ها یک اندازه ثابت
+    target_size = (100, 100)  # 👈 همه عکس‌ها یک اندازه ثابت
     for label in ethnic_labels:
         img_path = f"{label}.jpg"
         if os.path.exists(img_path):
@@ -141,4 +141,5 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+
 
