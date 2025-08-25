@@ -1,10 +1,10 @@
+import os
 import streamlit as st
 from tensorflow.keras.models import load_model
 from PIL import Image, ImageDraw
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import os
 from tensorflow.keras.preprocessing import image
 
 # ============ پیش‌پردازش ============
@@ -109,4 +109,5 @@ print(format_ethnicity_output(predictions_dict, predictions_irani_dict))
 prepared_images = prepare_ethnic_images()
 plot_ethnicity_pie(predictions_dict, prepared_images)
 """
+
 
