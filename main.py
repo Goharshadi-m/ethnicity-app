@@ -34,7 +34,6 @@ if uploaded_file is not None:
     with open(counter_file, "w") as f:
         f.write(str(upload_count))
     st.image(uploaded_file, caption="تصویر ورودی (Uploaded Image)", use_container_width=True)
-    st.image(uploaded_file, caption="", use_container_width=True)
     st.success("✅ File uploaded successfully!")
 
     img_array, original_img = preprocess_image(uploaded_file)
@@ -254,6 +253,7 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     ax.axis('equal')
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
