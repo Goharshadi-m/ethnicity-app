@@ -26,6 +26,16 @@ st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج 
 
 uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
+# ====== پیش‌پردازش ======
+def preprocess_image(uploaded_file):
+    img = Image.open(uploaded_file).convert("RGB")
+    img = img.resize((IMG_SIZE, IMG_SIZE))
+    img = img.convert("L")
+    img_array = image.img_to_array(img)
+    img_array = np.repeat(img_array, 3, axis=-1)
+    img_array = np.expand_dims(img_array, axis=0) / 255.0
+    return img_array, Image.open(uploaded_file)
+
 if uploaded_file is not None:
     # افزایش شمارنده
     upload_count += 1
@@ -174,15 +184,7 @@ def load_ethnic_images():
 
 prepared_images = load_ethnic_images()
 
-# ====== پیش‌پردازش ======
-def preprocess_image(uploaded_file):
-    img = Image.open(uploaded_file).convert("RGB")
-    img = img.resize((IMG_SIZE, IMG_SIZE))
-    img = img.convert("L")
-    img_array = image.img_to_array(img)
-    img_array = np.repeat(img_array, 3, axis=-1)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0
-    return img_array, Image.open(uploaded_file)
+
 
 # ====== رسم نمودار ======
 def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
