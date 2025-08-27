@@ -7,6 +7,56 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 
+# مسیر فایل شمارنده
+counter_file = "counter.txt"
+
+# اگر فایل وجود ندارد، بساز و صفر را داخلش بنویس
+if not os.path.exists(counter_file):
+    with open(counter_file, "w") as f:
+        f.write("0")
+
+# خواندن شمارنده فعلی
+with open(counter_file, "r") as f:
+    upload_count = int(f.read().strip())
+
+st.title("🌍 Ethnicity Detection")
+uploaded_file = st.file_uploader("Upload your portrait", type=["jpg","jpeg","png"])
+
+if uploaded_file is not None:
+    # افزایش شمارنده
+    upload_count += 1
+
+    # ذخیره مجدد در فایل
+    with open(counter_file, "w") as f:
+        f.write(str(upload_count))
+
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+    st.success("✅ File uploaded successfully!")
+
+# نمایش تعداد آپلودها
+
+# ------------------------------
+# نمایش تعداد آپلودها در کارت
+# ------------------------------
+card_html = f"""
+<div style="
+    background: rgba(0, 123, 255, 0.15); 
+    border-radius: 12px; 
+    padding: 15px; 
+    width: 250px; 
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: sans-serif;
+">
+    <h4 style="margin: 0; color: #007bff;">📊 Total Uploads</h4>
+    <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #000;">{upload_count}</p>
+</div>
+"""
+
+st.markdown(card_html, unsafe_allow_html=True)
+
+
+
 # 🌄 پس‌زمینه کل صفحه + شفافیت + گردی گوشه‌ها
 page_bg = """
 <style>
@@ -62,9 +112,9 @@ st.markdown(
     </style>
 
     <div class="footer">
-        This project was developed by <b>Arash Tehrani</b>.<br>
+        This project was developed by <b>Mostafa Goharshadi</b>.<br>
         For improvements or similar projects, feel free to contact me on 
-        <a href="https://wa.me/98912xxxxxxx" target="_blank">WhatsApp</a>.
+        <a href="https://wa.me/989304441138" target="_blank">WhatsApp</a>.
     </div>
     """,
     unsafe_allow_html=True
@@ -209,6 +259,7 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+
 
 
 
