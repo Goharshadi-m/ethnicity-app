@@ -19,8 +19,12 @@ if not os.path.exists(counter_file):
 with open(counter_file, "r") as f:
     upload_count = int(f.read().strip())
 
-st.title("🌍 Ethnicity Detection")
-uploaded_file = st.file_uploader("Upload your portrait", type=["jpg","jpeg","png"])
+# ====== اپلیکیشن ======
+
+st.title("🌍 سامانه تشخیص قومیت(Ethnicity Detection)")
+st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج پیش‌بینی را نمایش دهد.(Upload your portrait)")
+
+uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # افزایش شمارنده
@@ -29,9 +33,28 @@ if uploaded_file is not None:
     # ذخیره مجدد در فایل
     with open(counter_file, "w") as f:
         f.write(str(upload_count))
-
-    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+    st.image(uploaded_file, caption="تصویر ورودی (Uploaded Image)", use_container_width=True)
+    st.image(uploaded_file, caption="", use_column_width=True)
     st.success("✅ File uploaded successfully!")
+
+    img_array, original_img = preprocess_image(uploaded_file)
+    predictions = model.predict(img_array)[0]
+    predictions_irani = model_irani.predict(img_array)[0]
+
+    predictions_dict = dict(zip(ethnic_labels, predictions))
+    predictions_irani_dict = dict(zip(iranian_labels, predictions_irani))
+
+    st.subheader("🔹 نتایج پیش‌بینی گروه‌های قومی اصلی:")
+    for k, v in predictions_dict.items():
+        st.write(f"{k}: {v:.2%}")
+
+    st.subheader("🔹 نتایج پیش‌بینی زیرگروه‌های ایرانی:")
+    for k, v in predictions_irani_dict.items():
+        st.write(f"{k}: {v:.2%}")
+
+    st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
+    plot_ethnicity_pie(predictions_dict, prepared_images, original_img
+
 
 # نمایش تعداد آپلودها
 
@@ -232,33 +255,8 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     plt.tight_layout()
     st.pyplot(fig)
 
-# ====== اپلیکیشن ======
+)
 
-st.title("🌍 سامانه تشخیص قومیت")
-st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج پیش‌بینی را نمایش دهد.")
-
-uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
-
-if uploaded_file is not None:
-    st.image(uploaded_file, caption="تصویر ورودی", use_container_width=True)
-
-    img_array, original_img = preprocess_image(uploaded_file)
-    predictions = model.predict(img_array)[0]
-    predictions_irani = model_irani.predict(img_array)[0]
-
-    predictions_dict = dict(zip(ethnic_labels, predictions))
-    predictions_irani_dict = dict(zip(iranian_labels, predictions_irani))
-
-    st.subheader("🔹 نتایج پیش‌بینی گروه‌های قومی اصلی:")
-    for k, v in predictions_dict.items():
-        st.write(f"{k}: {v:.2%}")
-
-    st.subheader("🔹 نتایج پیش‌بینی زیرگروه‌های ایرانی:")
-    for k, v in predictions_irani_dict.items():
-        st.write(f"{k}: {v:.2%}")
-
-    st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
-    plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
 
 
 
