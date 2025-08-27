@@ -53,7 +53,7 @@ if uploaded_file is not None:
         st.write(f"{k}: {v:.2%}")
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
-    plot_ethnicity_pie(predictions_dict, prepared_images, original_img
+    plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
 
 
 # نمایش تعداد آپلودها
@@ -256,6 +256,7 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     st.pyplot(fig)
 
 )
+
 
 
 
