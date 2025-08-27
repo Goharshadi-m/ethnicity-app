@@ -7,6 +7,35 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 
+# ====== CSS برای بک‌گراند ======
+page_bg = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://raw.githubusercontent.com/USERNAME/REPO/main/header.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+[data-testid="stHeader"] {
+    background: rgba(0,0,0,0); /* حذف هدر سفید بالای صفحه */
+}
+
+[data-testid="stSidebar"] {
+    background: rgba(255, 255, 255, 0.5); /* سایدبار نیمه شفاف */
+}
+
+.block-container {
+    background-color: rgba(255, 255, 255, 0.75); 
+    border-radius: 15px;
+    padding: 20px;
+}
+</style>
+"""
+
+st.markdown(page_bg, unsafe_allow_html=True)
+
+
 # ====== تنظیمات ======
 IMG_SIZE = 224
 ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
@@ -117,9 +146,11 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     st.pyplot(fig)
 
 # ====== اپلیکیشن ======
-st.title("🌍 Ethnicity & Iranian Subgroups Classifier")
 
-uploaded_file = st.file_uploader("یک تصویر بارگذاری کنید", type=["jpg", "jpeg", "png"])
+st.title("🌍 سامانه تشخیص قومیت")
+st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج پیش‌بینی را نمایش دهد.")
+
+uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     st.image(uploaded_file, caption="تصویر ورودی", use_container_width=True)
@@ -141,5 +172,6 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+
 
 
