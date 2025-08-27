@@ -26,6 +26,13 @@ st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج 
 
 uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
+
+# ====== تنظیمات ======
+IMG_SIZE = 224
+ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
+iranian_labels = ['Baluch', 'Gilak', 'Hormozgani', 'Kurd', 'Lur', 'South_Khorasan', 'Yazdi']
+colors = ['#66b3ff', '#ff9999', '#99ff99', '#ffcc99', '#c2c2f0']
+
 # ====== پیش‌پردازش ======
 def preprocess_image(uploaded_file):
     img = Image.open(uploaded_file).convert("RGB")
@@ -152,15 +159,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-
-
-# ====== تنظیمات ======
-IMG_SIZE = 224
-ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
-iranian_labels = ['Baluch', 'Gilak', 'Hormozgani', 'Kurd', 'Lur', 'South_Khorasan', 'Yazdi']
-colors = ['#66b3ff', '#ff9999', '#99ff99', '#ffcc99', '#c2c2f0']
-
 # ====== بارگذاری مدل‌ها ======
 @st.cache_resource
 def load_models():
@@ -255,6 +253,7 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     ax.axis('equal')
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
