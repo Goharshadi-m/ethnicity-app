@@ -43,6 +43,15 @@ def preprocess_image(uploaded_file):
     img_array = np.expand_dims(img_array, axis=0) / 255.0
     return img_array, Image.open(uploaded_file)
 
+# ====== بارگذاری مدل‌ها ======
+@st.cache_resource
+def load_models():
+    model = load_model("ethnicity_model.keras")
+    model_irani = load_model("ethnicity_model_irani.keras")
+    return model, model_irani
+
+model, model_irani = load_models()
+
 if uploaded_file is not None:
     # افزایش شمارنده
     upload_count += 1
@@ -159,14 +168,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ====== بارگذاری مدل‌ها ======
-@st.cache_resource
-def load_models():
-    model = load_model("ethnicity_model.keras")
-    model_irani = load_model("ethnicity_model_irani.keras")
-    return model, model_irani
 
-model, model_irani = load_models()
 
 # ====== بارگذاری عکس‌های اقوام ======
 def load_ethnic_images():
@@ -253,6 +255,7 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     ax.axis('equal')
     plt.tight_layout()
     st.pyplot(fig)
+
 
 
 
