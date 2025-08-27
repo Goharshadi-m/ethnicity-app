@@ -7,23 +7,15 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 
-# 🌄 پس‌زمینه کل صفحه
+# 🌄 پس‌زمینه کل صفحه + شفافیت + گردی گوشه‌ها
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background-image: url("https://github.com/Goharshadi-m/ethnicity-app/blob/main/header.jpg");
+    background-image: url("https://raw.githubusercontent.com/Goharshadi-m/ethnicity-app/main/header.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
 }
-</style>
-"""
-st.markdown(page_bg, unsafe_allow_html=True)
-
-
-
-
-
 
 [data-testid="stHeader"] {
     background: rgba(0,0,0,0); /* حذف هدر سفید بالای صفحه */
@@ -42,6 +34,7 @@ st.markdown(page_bg, unsafe_allow_html=True)
 """
 
 st.markdown(page_bg, unsafe_allow_html=True)
+
 
 
 # ====== تنظیمات ======
@@ -180,6 +173,7 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+
 
 
 
