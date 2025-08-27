@@ -34,6 +34,42 @@ page_bg = """
 """
 
 st.markdown(page_bg, unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    .footer {
+        position: fixed;
+        bottom: 10px;
+        width: 100%;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.5);
+        padding: 10px;
+        border-radius: 12px;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        color: #333;
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+    }
+    .footer a {
+        color: #0066cc;
+        text-decoration: none;
+        font-weight: bold;
+        transition: color 0.3s ease;
+    }
+    .footer a:hover {
+        color: #ff6600;
+    }
+    </style>
+
+    <div class="footer">
+        This project was developed by <b>Arash Tehrani</b>.<br>
+        For improvements or similar projects, feel free to contact me on 
+        <a href="https://wa.me/98912xxxxxxx" target="_blank">WhatsApp</a>.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 
@@ -173,6 +209,7 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+
 
 
 
