@@ -255,7 +255,8 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     plt.tight_layout()
     st.pyplot(fig)
 
-)
+
+
 
 
 
