@@ -31,6 +31,9 @@ st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج 
 uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
 
+
+
+
 # ====== تنظیمات ======
 IMG_SIZE = 224
 ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
@@ -199,9 +202,6 @@ def load_ethnic_images():
 
 prepared_images = load_ethnic_images()
 
-
-
-
 # ====== رسم نمودار ======
 def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     labels = list(predictions_dict.keys())
@@ -273,8 +273,6 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
     plt.tight_layout()
     st.pyplot(fig)
 
-
-
 if uploaded_file is not None:
     # افزایش شمارنده
     upload_count += 1
@@ -304,7 +302,8 @@ if uploaded_file is not None:
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
     plot_ethnicity_pie(predictions_dict, prepared_images, center_image_for_pie)
-
+else:
+    st.info("لطفا یک تصویر آپلود کنید.")
 
 # نمایش تعداد آپلودها
 
@@ -392,6 +391,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
