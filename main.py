@@ -8,6 +8,8 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
 import cv2
 import dlib
+import bz2
+import requests
 
 # مسیر فایل شمارنده
 counter_file = "counter.txt"
@@ -36,8 +38,25 @@ iranian_labels = ['Baluch', 'Gilak', 'Hormozgani', 'Kurd', 'Lur', 'South_Khorasa
 colors = ['#66b3ff', '#ff9999', '#99ff99', '#ffcc99', '#c2c2f0']
 
 
+MODEL_URL = "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2"
+MODEL_BZ2 = "shape_predictor_68_face_landmarks.dat.bz2"
+MODEL_FILE = "shape_predictor_68_face_landmarks.dat"
 
-predictor_path = "shape_predictor_68_face_landmarks.dat"
+# اگر فایل وجود نداشت دانلود و اکسترکت کن
+if not os.path.exists(MODEL_FILE):
+    print("Downloading landmark model...")
+    r = requests.get(MODEL_URL, stream=True)
+    with open(MODEL_BZ2, "wb") as f:
+        for chunk in r.iter_content(chunk_size=1024*1024):
+            f.write(chunk)
+
+    print("Extracting...")
+    with bz2.open(MODEL_BZ2, "rb") as f_in, open(MODEL_FILE, "wb") as f_out:
+        f_out.write(f_in.read())
+
+    os.remove(MODEL_BZ2)  # پاک کردن فایل فشرده
+
+predictor_path = dlib.shape_predictor(MODEL_FILE)
 
 # بارگذاری detector و predictor فقط یکبار (برای کارایی)
 detector = dlib.get_frontal_face_detector()
@@ -371,6 +390,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
