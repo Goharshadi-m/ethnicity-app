@@ -30,7 +30,6 @@ st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج 
 
 uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
-center_image_for_pie = Image.open(uploaded_file).convert("RGB")
 
 # ====== تنظیمات ======
 IMG_SIZE = 224
@@ -286,7 +285,9 @@ if uploaded_file is not None:
     st.image(uploaded_file, caption="تصویر ورودی (Uploaded Image)", use_container_width=True)
     st.success("✅ File uploaded successfully!")
 
-    img_array, original_img = preprocess_image(uploaded_file)
+    center_image_for_pie = Image.open(uploaded_file).convert("RGB")
+    
+    img_array, _ = preprocess_image(uploaded_file)
     predictions = model.predict(img_array)[0]
     predictions_irani = model_irani.predict(img_array)[0]
 
@@ -391,6 +392,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
