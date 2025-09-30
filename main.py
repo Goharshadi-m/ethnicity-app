@@ -6,6 +6,8 @@ from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import os
+import cv2
+import dlib
 
 # مسیر فایل شمارنده
 counter_file = "counter.txt"
@@ -33,15 +35,128 @@ ethnic_labels = ['Arab', 'Iranian', 'IranianJews', 'Pashtun', 'Turkic']
 iranian_labels = ['Baluch', 'Gilak', 'Hormozgani', 'Kurd', 'Lur', 'South_Khorasan', 'Yazdi']
 colors = ['#66b3ff', '#ff9999', '#99ff99', '#ffcc99', '#c2c2f0']
 
-# ====== پیش‌پردازش ======
-def preprocess_image(uploaded_file):
-    img = Image.open(uploaded_file).convert("RGB")
-    img = img.resize((IMG_SIZE, IMG_SIZE))
-    img = img.convert("L")
-    img_array = image.img_to_array(img)
+
+
+predictor_path = "shape_predictor_68_face_landmarks.dat"
+
+# بارگذاری detector و predictor فقط یکبار (برای کارایی)
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(predictor_path)
+
+def remove_beard_and_head(img_pil):
+    """حذف ریش و بالای سر بدون نمایش"""
+    img = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = detector(gray)
+    if len(faces) == 0:
+        return img_pil  # اگر چهره شناسایی نشد، همان تصویر اصلی برگردد
+
+    face = faces[0]
+    landmarks = predictor(gray, face)
+
+    # --- حذف ریش ---
+    all_points = np.array([(landmarks.part(n).x, landmarks.part(n).y) for n in range(68)])
+    min_y, max_y = np.min(all_points[:, 1]), np.max(all_points[:, 1])
+    mid_y = (min_y + max_y) // 2
+
+    lower_half_mask = np.full(img.shape[:2], 255, dtype=np.uint8)
+    lower_half_mask[0:mid_y, :] = 0
+
+    lower_face_points = np.array([(landmarks.part(i).x, landmarks.part(i).y) for i in range(17)], np.int32)
+    lower_face_contour_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+    cv2.fillConvexPoly(lower_face_contour_mask, lower_face_points, 255)
+
+    inverted_lower_face = cv2.bitwise_not(lower_face_contour_mask)
+    beard_mask_to_clear = cv2.bitwise_and(lower_half_mask, inverted_lower_face)
+
+    white_image = np.full(img.shape, 255, dtype=np.uint8)
+    inverse_mask = cv2.bitwise_not(beard_mask_to_clear)
+    foreground = cv2.bitwise_and(img, img, mask=inverse_mask)
+    background = cv2.bitwise_and(white_image, white_image, mask=beard_mask_to_clear)
+    img_beard_removed = cv2.add(foreground, background)
+
+    # --- حذف بالای سر ---
+    current_image = img_beard_removed.copy()
+    try:
+        image_points = np.array([
+            (landmarks.part(30).x, landmarks.part(30).y),
+            (landmarks.part(8).x, landmarks.part(8).y),
+            (landmarks.part(36).x, landmarks.part(36).y),
+            (landmarks.part(45).x, landmarks.part(45).y),
+            (landmarks.part(48).x, landmarks.part(48).y),
+            (landmarks.part(54).x, landmarks.part(54).y)
+        ], dtype="double")
+
+        model_points = np.array([
+            (0.0, 0.0, 0.0),
+            (0.0, -330.0, -65.0),
+            (-225.0, 170.0, -135.0),
+            (225.0, 170.0, -135.0),
+            (-150.0, -150.0, -125.0),
+            (150.0, -150.0, -125.0)
+        ], dtype="double")
+
+        focal_length = img.shape[1]
+        center = (img.shape[1]/2, img.shape[0]/2)
+        camera_matrix = np.array([[focal_length,0,center[0]],
+                                  [0,focal_length,center[1]],
+                                  [0,0,1]], dtype="double")
+        dist_coeffs = np.zeros((4,1))
+
+        success, rotation_vector, translation_vector = cv2.solvePnP(
+            model_points, image_points, camera_matrix, dist_coeffs, flags=cv2.SOLVEPNP_ITERATIVE
+        )
+
+        if success:
+            head_3d_points = np.array([
+                (0.0, 500.0, -100.0),
+                (-300.0, 300.0, -150.0),
+                (300.0, 300.0, -150.0),
+                (-200.0, 450.0, -120.0),
+                (200.0, 450.0, -120.0),
+                (-400.0, 0.0, -100.0),
+                (400.0, 0.0, -100.0)
+            ], dtype="double")
+            projected_points, _ = cv2.projectPoints(head_3d_points, rotation_vector, translation_vector, camera_matrix, dist_coeffs)
+            projected_points_2d = projected_points.reshape(-1,2)
+            nose_tip = np.array([landmarks.part(30).x, landmarks.part(30).y])
+            scaled_points = nose_tip + 1.4*(projected_points_2d - nose_tip)
+            scaled_points = np.array(scaled_points, dtype=np.int32)
+
+            if scaled_points.shape[0] >= 3:
+                hull = cv2.convexHull(scaled_points)
+                mask_keep = np.zeros(current_image.shape[:2], dtype=np.uint8)
+                cv2.fillConvexPoly(mask_keep, hull, 255)
+                h_img = current_image.shape[0]
+                mask_bottom_70 = np.zeros(current_image.shape[:2], dtype=np.uint8)
+                mask_bottom_70[int(h_img*0.30):, :] = 255
+                combined_mask = cv2.bitwise_or(mask_keep, mask_bottom_70)
+                img_final = cv2.bitwise_and(current_image, current_image, mask=combined_mask)
+                img_final += cv2.bitwise_and(np.full(current_image.shape,255,dtype=np.uint8),
+                                             np.full(current_image.shape,255,dtype=np.uint8),
+                                             mask=cv2.bitwise_not(combined_mask))
+            else:
+                img_final = current_image.copy()
+        else:
+            img_final = current_image.copy()
+    except:
+        img_final = current_image.copy()
+
+    img_rgb = cv2.cvtColor(img_final, cv2.COLOR_BGR2RGB)
+    return Image.fromarray(img_rgb)
+
+
+def preprocess_image(uploaded_file, IMG_SIZE=224):
+    img_original = Image.open(uploaded_file).convert("RGB")  # تصویر اصلی برای نمایش
+    img_clean = img_original.copy()  # کپی برای پردازش مدل
+    """حذف ریش و سربند + resize + normalize"""
+    img_clean = remove_beard_and_head(img_clean)
+    img_clean = img_clean.resize((IMG_SIZE, IMG_SIZE))
+    img_gray = img_clean.convert("L")
+    img_array = image.img_to_array(img_gray)
     img_array = np.repeat(img_array, 3, axis=-1)
     img_array = np.expand_dims(img_array, axis=0) / 255.0
-    return img_array, Image.open(uploaded_file)
+    return img_array, img_clean
 
 # ====== بارگذاری مدل‌ها ======
 @st.cache_resource
@@ -52,19 +167,19 @@ def load_models():
 
 model, model_irani = load_models()
 
-# ====== بارگذاری عکس‌های اقوام ======
 def load_ethnic_images():
     prepared_images = {}
-    target_size = (100, 100)  # 👈 همه عکس‌ها یک اندازه ثابت
+    target_size = (224, 224)  # اندازه همسان با مدل
     for label in ethnic_labels:
         img_path = f"{label}.jpg"
         if os.path.exists(img_path):
-            img = Image.open(img_path).convert("RGBA")
-            img = img.resize(target_size, Image.Resampling.LANCZOS)  # 👈 تغییر اینجا
+            img = Image.open(img_path).convert("RGB")  # فقط RGB
+            img = img.resize(target_size, Image.Resampling.LANCZOS)
             prepared_images[label] = img
     return prepared_images
 
 prepared_images = load_ethnic_images()
+
 
 
 
@@ -120,6 +235,7 @@ def plot_ethnicity_pie(predictions_dict, prepared_images, center_img):
 
     # تصویر مرکزی
     if center_img is not None:
+        center_img = center_img.convert("RGBA")
         inner_hole_diameter = 1 - wedgeprops['width']
         img_size_for_center = int(plt.rcParams['figure.figsize'][0] * fig.dpi * inner_hole_diameter * 0.7)
         center_img_resized = center_img.resize((img_size_for_center, img_size_for_center), Image.Resampling.LANCZOS)
@@ -255,6 +371,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
