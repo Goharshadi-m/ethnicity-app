@@ -161,8 +161,8 @@ def preprocess_image(uploaded_file, IMG_SIZE=224):
 # ====== بارگذاری مدل‌ها ======
 @st.cache_resource
 def load_models():
-    model = load_model("ethnicity_model.keras")
-    model_irani = load_model("ethnicity_model_irani.keras")
+    model = load_model("ethnicity_model_NoBeardNoHead.keras")
+    model_irani = load_model("ethnicity_model_irani_NoBeardNoHead.keras")
     return model, model_irani
 
 model, model_irani = load_models()
@@ -371,6 +371,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
