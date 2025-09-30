@@ -30,6 +30,7 @@ st.write("یک تصویر پرتره آپلود کنید تا مدل نتایج 
 
 uploaded_file = st.file_uploader("تصویر خود را آپلود کنید", type=["jpg", "jpeg", "png"])
 
+center_image_for_pie = Image.open(uploaded_file).convert("RGB")
 
 # ====== تنظیمات ======
 IMG_SIZE = 224
@@ -301,7 +302,7 @@ if uploaded_file is not None:
         st.write(f"{k}: {v:.2%}")
 
     st.subheader("📊 نمودار گروه‌های اصلی همراه با تصاویر")
-    plot_ethnicity_pie(predictions_dict, prepared_images, original_img)
+    plot_ethnicity_pie(predictions_dict, prepared_images, center_image_for_pie)
 
 
 # نمایش تعداد آپلودها
@@ -390,6 +391,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
