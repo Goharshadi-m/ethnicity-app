@@ -4,6 +4,8 @@ pillow
 numpy
 matplotlib
 opencv-python-headless
-dlib
-requests
+dlib-bin
+scikit-learn
+matplotlib
+
 
