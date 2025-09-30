@@ -170,6 +170,7 @@ def remove_beard_and_head(img_pil):
 
 def preprocess_image(uploaded_file, IMG_SIZE=224):
     img_original = Image.open(uploaded_file).convert("RGB")  # تصویر اصلی برای نمایش
+    img_original.thumbnail((1024, 1024))  # کاهش اندازه قبل از پردازش
     img_clean = img_original.copy()  # کپی برای پردازش مدل
     """حذف ریش و سربند + resize + normalize"""
     img_clean = remove_beard_and_head(img_clean)
@@ -391,6 +392,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
